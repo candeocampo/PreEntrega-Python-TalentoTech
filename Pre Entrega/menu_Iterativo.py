@@ -1,13 +1,93 @@
 
-print("Bienvenido!")
-local=str(input("Ingrese nombre de su local: "))
+# Importar la base de datos
+import sqlite3
 
-condicion = True
+# Color
+# Style.BRIGHTY es ideal para título
+# Style.DIM se usa para mensajes secundarios
+from colorama import init, Fore, Style
+init(autoreset=True) #Inicilizado colorama
 
-productos=[] #Lista de productos
+# Funcion: Crear tabla
+def crear_tabla_productos():
+    conexion = sqlite3.connect("base_de_datos.db")
+    cursor = conexion.cursor()
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Productos(
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               nombre TEXT UNIQUE NOT NULL,
+               descripcion TEXT NOT NULL,
+               stock INTEGER NOT NULL,
+               precio REAL NOT NULL,
+               categoria TEXT NOT NULL)''')
+    conexion.commit()
+    conexion.close()
+crear_tabla_productos()
 
-while condicion:
-    print(f"\nInventario de: {local}")
+
+## Función: Agregar productos
+def agregar_producto(nombre,descripcion,stock,precio,categoria):
+    datos = [nombre, descripcion, stock, precio, categoria]
+    conexion = sqlite3.connect("base_de_dato.db")
+    cursor = conexion.cursor()
+
+    cursor.execute("INSERT INTO Productos (nombre, descripcion, stock, precio, categoria) VALUES (?,?,?,?,?)", datos)
+    conexion.commit()
+    print(Fore.LIGHTMAGENTA_EX + f"Producto{nombre} registrado con éxito!")
+    conexion.close()            
+
+# Función: Mostrar producto
+def mostrar_productos(productos = 0, producto_unico = False):
+    if productos == 0:
+        conexion = sqlite3.connect("base_de_datos.db")
+        cursor = sqlite3.cursor()
+        cursor.execute("SELECT * FROM Productos") # Seleccionamos la tabla
+        resultados = cursor.fetchall()
+        for registro in resultados:
+            print("ID:", registro[0],
+                  "Nombre:", registro[1],
+                  "Descripcion:", registro[2],
+                  "Stock:",registro[3],
+                  "Precio:", registro[4],
+                  "Categoria:", registro[5])
+        conexion.close()
+    else:
+        if producto_unico:
+            print("ID:", registro[0],
+                  "Nombre:", registro[1],
+                  "Descripcion:", registro[2],
+                  "Stock:",registro[3],
+                  "Precio:", registro[4],
+                  "Categoria:", registro[5])
+        else:
+            for registro in productos:
+                print("ID:", registro[0],
+                  "Nombre:", registro[1],
+                  "Descripcion:", registro[2],
+                  "Stock:",registro[3],
+                  "Precio:", registro[4],
+                  "Categoria:", registro[5])
+
+
+
+
+
+# Función: Buscar Producto
+def buscar_producto():
+    nombre = input("Ingrese nombre del producto: ").capitalize()
+    conexion = sqlite3.connect("base_de_datos.db")
+    cursor = conexion.cursor()
+    cursor.execute("SELECT * FROM Productos WHERE nombre = ?",(nombre,))
+
+    resultados = cursor.fetchone()
+    if resultados != None:
+        mostrar_productos(resultados,True)
+    else:
+        print("Registro de producto no encontrado.")
+    conexion.close()
+
+# Funcion: Mostrar Menu Iteractivo
+def mostrar_menu():
     print(" ___________________________________________")
     print("|        Menú de Gestión de Productos       |")
     print("|-------------------------------------------|")
@@ -20,42 +100,62 @@ while condicion:
     print("| 7. Salir.                                 |")
     print(" ___________________________________________")
 
-    # solicitar la opcion deseada al usuario
-    opcion = int(input("Ingrese opcion:"))
+def main():
+    menu = True
+    while menu:
+        mostrar_menu()
+        opcion = input("Ingrese opcion: ")
+        ## Opcion 1: Registrar Producto
+        if opcion == "1":
+            nombre = input("Ingrese Nombre del Producto: ").capitalize()
+            descripcion = input("Descripcion: ").capitalize()            
+            stock = 0
+            while stock <= 0:
+                try:
+                    stock = int(input("Cantidad de Stock: "))
+                    if stock <=0:
+                        print(estilo_aviso + "Por favor, ingrese un numero mayor que 0.")
+                except ValueError:
+                    print(estilo_aviso + "Ingrese un numero")
+                    stock = 0
+            precio = 0
+            while precio <= 0:
+                try:
+                    precio = int(input("Precio del Producto: "))
+                    if precio <=0:
+                        print(estilo_aviso + "Por favor, ingrese un numero mayor que 0.")
+                except ValueError:
+                    print(estilo_aviso + "Ingrese un numero")
+                    precio = 0
+            categoria = input("Ingrese la Categoria del Producto: ").capitalize()
+            agregar_producto(nombre, descripcion, stock, precio, categoria)
+            print("Productos agregados exitosamente!\n")
+        ## Opcion 2: mostrar productos
+        elif opcion == "2":
+            mostrar_productos()
+        elif opcion == "3":
+            actualizar_producto()
+        elif opcion == "4":
+            eliminar_producto()
+        elif opcion == "5":
+            reporte_bajo_stock()
+        elif opcion == "6":
+            buscar_producto_por_nombre()
+        elif opcion == "7":
+            menu = False
+        else:
+            print(estilo_alerta +"¡Error! Por favor, ingrese una opcion válida.\n")  
 
-    if opcion == 1:
-        n = 0 
-        cantidad=int(input("¿Cuantos productos desea agregar?: "))
-        while n < cantidad:
-            # solicitar datos del producto
-            prod=str(input("Nombre del Producto: "))
-            stock=int(input("Cantidad de Stock: "))
-            
-            producto={"Nombre": prod, "Stock": stock}
-            productos.append(producto)
-            n +=1
 
-        print("Productos agregados exitosamente!\n")
 
-    elif opcion == 2:
-        print("Proximamente disponible..")
-    elif opcion == 3:
-        print("Proximamente disponible..")
-    elif opcion == 4:
-        print("Proximamente disponible..")
-    elif opcion == 5:
-        print("PRODUCTO   |  STOCK")
-        i = 0
 
-        while i < len(productos):
-            producto = productos[i]
-            print(f"\b{producto['Nombre']}    |   {producto['Stock']}") 
-            i +=1
 
-    elif opcion == 6:
-        print("Proximamente disponible..")
-    elif opcion == 7:
-        print("Salida exitosa!")
-        condicion = False
-    else:
-        print("¡Error! Por favor, ingrese una opcion válida.")
+# Funciones a convocar:
+# agregar_producto("Prueba2", "Bebida para hidratarse", 10, 10.50, "Bebida")
+# mostrar_productos()
+# actualizar_producto()
+# eliminar_producto()
+# reporte_bajo_stock()
+# reporte_bajo_stock()
+# buscar_producto_por_nombre()
+main()
